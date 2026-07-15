@@ -77,15 +77,18 @@
         <!--
              Full-screen lock screen shown on top of a locked app (launched by the accessibility
              service) and also used for the in-app "Preview lock" demo. Not exported: only KidLock
-             can start it. singleTask + excludeFromRecents keep a single instance that never lingers
-             in Recents. configChanges avoids recreating the screen (and losing typed input) on TV
-             UI-mode / size changes.
+             can start it. An empty taskAffinity + singleInstance keep it in its OWN isolated task so
+             finishing it never surfaces KidLock's UI; excludeFromRecents / autoRemoveFromRecents keep
+             it out of Recents. configChanges avoids recreating the screen (and losing typed input)
+             on TV UI-mode / size changes.
         -->
         <activity
             android:name=".lock.LockActivity"
+            android:autoRemoveFromRecents="true"
             android:excludeFromRecents="true"
             android:exported="false"
-            android:launchMode="singleTask"
+            android:launchMode="singleInstance"
+            android:taskAffinity=""
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation|uiMode"
             android:theme="@style/Theme.KidLock.Lock" />
 

@@ -83,6 +83,9 @@ interface BlockedAppDao {
     @Query("UPDATE blocked_apps SET isEnabled = :enabled WHERE packageName = :pkg")
     suspend fun setEnabled(pkg: String, enabled: Boolean)
 
+    @Query("UPDATE blocked_apps SET isEnabled = :enabled")
+    suspend fun setAllEnabled(enabled: Boolean)
+
     @Query("SELECT COUNT(*) FROM blocked_apps")
     suspend fun count(): Int
 }

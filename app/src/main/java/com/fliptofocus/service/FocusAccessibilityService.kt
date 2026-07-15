@@ -146,11 +146,10 @@ class FocusAccessibilityService : AccessibilityService() {
             return
         }
 
-        // Handle leaving the previous app so its unlock grant expires per the grace setting.
+        // Leaving the previous app drops a "while foreground" grant (timed windows keep counting).
         val previous = lastForegroundPkg
         if (previous != null && previous != pkg) {
-            val graceMillis = cachedConfig.relockGraceSeconds.toLong() * 1000L
-            lockController.onLeftApp(previous, graceMillis)
+            lockController.onLeftApp(previous)
         }
         lastForegroundPkg = pkg
 

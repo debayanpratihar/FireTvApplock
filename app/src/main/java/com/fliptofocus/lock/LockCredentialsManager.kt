@@ -75,6 +75,6 @@ class LockCredentialsManager @Inject constructor(
     }
 
     suspend fun setRelockGraceSeconds(seconds: Int) {
-        repo.updateConfig(repo.getConfig().copy(relockGraceSeconds = seconds.coerceIn(0, 600)))
+        repo.updateConfig(repo.getConfig().copy(relockGraceSeconds = seconds.coerceIn(0, 3600)))
     }
 }

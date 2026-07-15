@@ -77,7 +77,9 @@ fun LockScreen(
     onVerifySequence: (List<Int>) -> Boolean,
     onVerifyRecovery: (String) -> Boolean,
     onUnlocked: () -> Unit,
-    onGoBack: () -> Unit
+    onGoBack: () -> Unit,
+    onWrongAttempt: () -> Unit = {},
+    cooldownRemainingMillis: () -> Long = { 0L }
 ) {
     var mode by remember { mutableStateOf(LockMode.PIN) }
     var pin by remember { mutableStateOf("") }
@@ -85,6 +87,12 @@ fun LockScreen(
     var sequence by remember { mutableStateOf(listOf<Int>()) }
     var errorText by remember { mutableStateOf<String?>(null) }
     var errorNonce by remember { mutableIntStateOf(0) }
+
+    // Brute-force lockout: poll the shared cooldown every 500 ms and block input while it lasts.
+    var cooldownTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) { while (true) { delay(500); cooldownTick++ } }
+    val cooldownMs = remember(cooldownTick) { cooldownRemainingMillis() }
+    val inCooldown = cooldownMs > 0L
 
     val padFocus = remember { FocusRequester() }
     val seqFocus = remember { FocusRequester() }
@@ -108,6 +116,7 @@ fun LockScreen(
     }
 
     fun fail(message: String) {
+        onWrongAttempt()
         errorText = message
         errorNonce++
     }
@@ -164,7 +173,7 @@ fun LockScreen(
                         NumberPad(
                             firstKeyFocusRequester = padFocus,
                             onDigit = { d ->
-                                if (pin.length < PIN_MAX) {
+                                if (!inCooldown && pin.length < PIN_MAX) {
                                     val next = pin + d
                                     when {
                                         next.length in PIN_MIN..PIN_MAX && onVerifyPin(next) -> {
@@ -177,16 +186,18 @@ fun LockScreen(
                             },
                             onDelete = { if (pin.isNotEmpty()) pin = pin.dropLast(1) },
                             onOk = {
-                                if (pin.length in PIN_MIN..PIN_MAX && onVerifyPin(pin)) {
-                                    pin = ""; onUnlocked()
-                                } else { pin = ""; fail("Incorrect PIN. Try again.") }
+                                if (!inCooldown) {
+                                    if (pin.length in PIN_MIN..PIN_MAX && onVerifyPin(pin)) {
+                                        pin = ""; onUnlocked()
+                                    } else { pin = ""; fail("Incorrect PIN. Try again.") }
+                                }
                             }
                         )
                     }
 
                     LockMode.RECOVERY -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "$recovery".padEnd(RECOVERY_LEN, '•'),
+                            text = recovery.padEnd(RECOVERY_LEN, '•'),
                             color = Color.White,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.SemiBold
@@ -195,7 +206,7 @@ fun LockScreen(
                         NumberPad(
                             firstKeyFocusRequester = padFocus,
                             onDigit = { d ->
-                                if (recovery.length < RECOVERY_LEN) {
+                                if (!inCooldown && recovery.length < RECOVERY_LEN) {
                                     val next = recovery + d
                                     if (next.length == RECOVERY_LEN) {
                                         if (onVerifyRecovery(next)) { recovery = ""; onUnlocked() }
@@ -205,9 +216,11 @@ fun LockScreen(
                             },
                             onDelete = { if (recovery.isNotEmpty()) recovery = recovery.dropLast(1) },
                             onOk = {
-                                if (recovery.length == RECOVERY_LEN && onVerifyRecovery(recovery)) {
-                                    recovery = ""; onUnlocked()
-                                } else { recovery = ""; fail("Incorrect recovery code.") }
+                                if (!inCooldown) {
+                                    if (recovery.length == RECOVERY_LEN && onVerifyRecovery(recovery)) {
+                                        recovery = ""; onUnlocked()
+                                    } else { recovery = ""; fail("Incorrect recovery code.") }
+                                }
                             }
                         )
                     }
@@ -216,22 +229,37 @@ fun LockScreen(
                         sequence = sequence,
                         focusRequester = seqFocus,
                         onDirection = { dir ->
-                            errorText = null
-                            sequence = if (sequence.size >= Combo.MAX_LENGTH) listOf(dir)
-                            else sequence + dir
+                            if (!inCooldown) {
+                                errorText = null
+                                sequence = if (sequence.size >= Combo.MAX_LENGTH) listOf(dir)
+                                else sequence + dir
+                            }
                         },
                         onSubmit = {
-                            if (sequence.size >= Combo.MIN_LENGTH && onVerifySequence(sequence)) {
-                                sequence = emptyList(); onUnlocked()
-                            } else { sequence = emptyList(); fail("Incorrect sequence. Try again.") }
+                            if (!inCooldown) {
+                                if (sequence.size >= Combo.MIN_LENGTH && onVerifySequence(sequence)) {
+                                    sequence = emptyList(); onUnlocked()
+                                } else { sequence = emptyList(); fail("Incorrect sequence. Try again.") }
+                            }
                         }
                     )
                 }
             }
 
-            if (errorText != null) {
-                Spacer(Modifier.height(14.dp))
-                Text(text = errorText!!, color = IosRed, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            when {
+                inCooldown -> {
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        text = "Too many attempts. Try again in ${cooldownMs / 1000 + 1}s.",
+                        color = IosRed,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                errorText != null -> {
+                    Spacer(Modifier.height(14.dp))
+                    Text(text = errorText!!, color = IosRed, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                }
             }
 
             Spacer(Modifier.height(22.dp))

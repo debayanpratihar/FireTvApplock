@@ -30,6 +30,7 @@ import androidx.navigation.compose.rememberNavController
 import com.fliptofocus.domain.model.AppConfig
 import com.fliptofocus.domain.repository.AppConfigRepository
 import com.fliptofocus.lock.Combo
+import com.fliptofocus.lock.LockController
 import com.fliptofocus.lock.LockScreen
 import com.fliptofocus.ui.blocklist.BlocklistScreen
 import com.fliptofocus.ui.home.HomeScreen
@@ -51,13 +52,18 @@ object Routes {
     const val SETTINGS = "settings"
 }
 
-/** Exposes the on-device config (null while still loading) to the root. */
+/** Exposes the on-device config (null while still loading) plus the shared brute-force cooldown. */
 @HiltViewModel
 class RootViewModel @Inject constructor(
-    appConfigRepository: AppConfigRepository
+    appConfigRepository: AppConfigRepository,
+    private val lockController: LockController
 ) : ViewModel() {
     val config: StateFlow<AppConfig?> = appConfigRepository.observeConfig()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun onWrongAttempt() = lockController.registerFailedAttempt()
+    fun cooldownRemaining(): Long = lockController.cooldownRemainingMillis()
+    fun resetAttempts() = lockController.resetAttempts()
 }
 
 /**
@@ -119,7 +125,9 @@ fun AppNavigation(
                         config.recoveryHash
                     )
                 },
-                onUnlocked = { appUnlocked = true },
+                onWrongAttempt = rootViewModel::onWrongAttempt,
+                cooldownRemainingMillis = rootViewModel::cooldownRemaining,
+                onUnlocked = { rootViewModel.resetAttempts(); appUnlocked = true },
                 onGoBack = { (context as? Activity)?.moveTaskToBack(true) }
             )
             return

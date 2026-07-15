@@ -22,12 +22,17 @@ payments.** Your PIN, locked-app list, and history never leave the device.
 - **Secret remote sequence** (optional) — a unique, TV-native unlock: press a private sequence of
   ↑ ↓ ← → on the remote, then the center button.
 - **Recovery code** generated once at setup so a forgotten PIN never permanently locks you out.
+- **"Keep unlocked for" slider** (0–60 min) — after unlocking, an app stays open for the chosen
+  window (even across app switches) before re-locking; 0 re-locks the moment you leave it.
+- **Bedtime lockdown** — one action to lock every installed app (or unlock them all) at once.
+- **Brute-force cooldown** — after several wrong PINs, entry is disabled for 30 s with a countdown.
 - **In-app "Preview lock"** — see exactly what a child sees and verify the lock works without needing
   any special permission (also lets an app reviewer confirm the feature in-app).
 - **Access log** — a local history of when locked apps were opened (unlocked / denied).
 - **Self-protection** — KidLock's own settings are behind the PIN, so a child can't open KidLock and
   turn locking off.
-- **Fully remote-navigable** dark UI with a clear focus indicator on every control.
+- **Fully remote-navigable** dark UI with a clear focus indicator on every control, plus a splash
+  screen and a padlock app icon.
 
 ---
 
@@ -93,10 +98,14 @@ Accessibility settings screen.
 - `service/FocusAccessibilityService` observes window-state changes and polls the foreground package.
 - When a **locked** app comes to the foreground and is not currently unlocked, it launches
   `lock/LockActivity`, which shows the PIN / secret-sequence / recovery entry.
-- A correct credential calls `LockController.grantForeground(pkg)`, logs an `UNLOCKED` access event, and
-  finishes the lock so the app appears. Backing out logs `DENIED` and returns to the device home.
-- `LockController` tracks grants: an unlocked app stays open while in the foreground; leaving it re-locks
-  it (immediately, or after a configurable grace period set in Settings).
+- A correct credential calls `LockController.grant(pkg, window)`, logs an `UNLOCKED` access event, and
+  **explicitly relaunches the locked app** (via its launcher/leanback-launcher intent) so it — not
+  KidLock — comes to the front. Backing out logs `DENIED` and returns to the device home.
+- `LockController` tracks grants: with the "keep unlocked for" window at 0 an unlocked app stays open
+  only while in the foreground (leaving re-locks it); a positive window keeps it unlocked for that long
+  even across app switches, then re-locks.
+- The lock Activity runs in its **own isolated task** (`taskAffinity=""`, `singleInstance`) so finishing
+  it never surfaces KidLock's own screen.
 - Credentials are stored only as **salted SHA-256 hashes** (`util/PinSecurity`).
 
 > **Note on cross-app locking:** Android 10+ restricts background activity starts. Fire OS generally

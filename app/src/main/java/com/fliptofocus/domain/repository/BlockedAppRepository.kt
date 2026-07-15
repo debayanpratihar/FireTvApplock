@@ -10,5 +10,6 @@ interface BlockedAppRepository {
     suspend fun addBlockedApp(app: BlockedApp)
     suspend fun removeBlockedApp(packageName: String)
     suspend fun setEnabled(packageName: String, enabled: Boolean)
+    suspend fun setAllEnabled(enabled: Boolean)
     suspend fun seedDefaultsIfEmpty()
 }

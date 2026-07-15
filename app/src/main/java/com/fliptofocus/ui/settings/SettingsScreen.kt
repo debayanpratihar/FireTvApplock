@@ -20,11 +20,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,7 +51,6 @@ import com.fliptofocus.lock.Combo
 import com.fliptofocus.ui.components.FocusableRow
 import com.fliptofocus.ui.components.NumberPad
 import com.fliptofocus.ui.components.PinDots
-import com.fliptofocus.ui.components.QrCode
 import com.fliptofocus.ui.components.TvButton
 import com.fliptofocus.ui.theme.IosBackground
 import com.fliptofocus.ui.theme.IosBlue
@@ -57,16 +59,9 @@ import com.fliptofocus.ui.theme.IosNested
 import com.fliptofocus.ui.theme.IosRed
 import com.fliptofocus.ui.theme.IosSecondaryLabel
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 private enum class SettingsMode { MAIN, CHANGE_PIN, SET_SEQUENCE }
-
-private val GRACE_OPTIONS = listOf(
-    0 to "Immediately",
-    10 to "After 10 seconds",
-    30 to "After 30 seconds",
-    60 to "After 1 minute",
-    300 to "After 5 minutes"
-)
 
 @Composable
 fun SettingsScreen(
@@ -105,7 +100,9 @@ fun SettingsScreen(
             onRemoveSequence = viewModel::clearCombo,
             onRegenerateRecovery = viewModel::regenerateRecovery,
             onToggleLocking = { viewModel.setLockingEnabled(!uiState.isLockingEnabled) },
-            onSelectGrace = viewModel::setRelockGrace
+            onSelectGrace = viewModel::setRelockGrace,
+            onLockAll = viewModel::lockAllApps,
+            onUnlockAll = viewModel::unlockAllApps
         )
     }
 }
@@ -119,7 +116,9 @@ private fun SettingsMain(
     onRemoveSequence: () -> Unit,
     onRegenerateRecovery: () -> Unit,
     onToggleLocking: () -> Unit,
-    onSelectGrace: (Int) -> Unit
+    onSelectGrace: (Int) -> Unit,
+    onLockAll: () -> Unit,
+    onUnlockAll: () -> Unit
 ) {
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { delay(80); runCatching { firstFocus.requestFocus() } }
@@ -172,21 +171,19 @@ private fun SettingsMain(
             trailing = if (uiState.isLockingEnabled) "ON" else "OFF"
         )
         Spacer(Modifier.height(8.dp))
-        Text(
-            "Re-lock a reopened app",
-            color = IosSecondaryLabel,
-            fontSize = 13.sp,
-            modifier = Modifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp)
+        SettingRow(
+            title = "Lock all apps now",
+            subtitle = "Lock every installed app — great for bedtime",
+            onClick = onLockAll
         )
-        GRACE_OPTIONS.forEach { (seconds, label) ->
-            SettingRow(
-                title = label,
-                subtitle = null,
-                onClick = { onSelectGrace(seconds) },
-                selected = uiState.relockGraceSeconds == seconds
-            )
-            Spacer(Modifier.height(6.dp))
-        }
+        Spacer(Modifier.height(8.dp))
+        SettingRow(
+            title = "Unlock all apps",
+            subtitle = "Turn the lock off for every app",
+            onClick = onUnlockAll
+        )
+        Spacer(Modifier.height(12.dp))
+        UnlockDurationSlider(currentSeconds = uiState.relockGraceSeconds, onChange = onSelectGrace)
 
         Spacer(Modifier.height(20.dp))
         SectionHeader("PRIVACY")
@@ -241,6 +238,49 @@ private fun SettingRow(
             Icon(Icons.Filled.Check, contentDescription = "Selected", tint = IosBlue)
         }
     }
+}
+
+@Composable
+private fun UnlockDurationSlider(currentSeconds: Int, onChange: (Int) -> Unit) {
+    var minutes by remember(currentSeconds) { mutableFloatStateOf(currentSeconds / 60f) }
+    // Commit on every discrete step (reliable with a D-pad, where onValueChangeFinished may not
+    // fire) as well as on release; de-duplicated so we don't spam the DB with identical writes.
+    var lastCommitted by remember(currentSeconds) { mutableIntStateOf(currentSeconds / 60) }
+    fun commit(m: Int) {
+        if (m != lastCommitted) {
+            lastCommitted = m
+            onChange(m * 60)
+        }
+    }
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Keep unlocked for", fontSize = 16.sp, modifier = Modifier.weight(1f))
+            Text(
+                text = durationLabel(minutes.roundToInt()),
+                color = IosBlue,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Slider(
+            value = minutes,
+            onValueChange = { minutes = it; commit(it.roundToInt()) },
+            onValueChangeFinished = { commit(minutes.roundToInt()) },
+            valueRange = 0f..60f,
+            steps = 59
+        )
+        Text(
+            text = "After unlocking, an app stays open this long (even if you leave), then re-locks. " +
+                "\"Until you leave\" re-locks the moment you switch away.",
+            color = IosSecondaryLabel,
+            fontSize = 12.sp
+        )
+    }
+}
+
+private fun durationLabel(minutes: Int): String = when {
+    minutes <= 0 -> "Until you leave"
+    minutes == 60 -> "1 hour"
+    else -> "$minutes min"
 }
 
 @Composable
@@ -404,10 +444,6 @@ private fun RecoveryCodePanel(code: String, onDone: () -> Unit) {
         ) {
             Text(code, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
         }
-        Spacer(Modifier.height(16.dp))
-        QrCode(content = "KidLock TV recovery code: $code")
-        Spacer(Modifier.height(8.dp))
-        Text("Scan with your phone to save it", color = IosSecondaryLabel, fontSize = 13.sp)
         Spacer(Modifier.height(24.dp))
         TvButton(text = "I've written it down", onClick = onDone, focusRequester = focus)
     }

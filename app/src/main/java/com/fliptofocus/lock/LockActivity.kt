@@ -97,18 +97,22 @@ class LockActivity : ComponentActivity() {
                                     cfg.recoveryHash
                                 )
                             },
+                            onWrongAttempt = { lockController.registerFailedAttempt() },
+                            cooldownRemainingMillis = { lockController.cooldownRemainingMillis() },
                             onUnlocked = {
+                                lockController.resetAttempts()
                                 if (preview) {
                                     showSuccess = true
                                 } else {
                                     val pkg = targetPackage
                                     if (pkg.isNotBlank()) {
-                                        lockController.grantForeground(pkg)
+                                        lockController.grant(pkg, cfg.relockGraceSeconds * 1000L)
                                         scope.launch {
                                             runCatching {
                                                 focusSessionRepository.logEvent(pkg, SessionStatus.UNLOCKED)
                                             }
                                         }
+                                        launchLockedApp(pkg)
                                     }
                                     finish()
                                 }
@@ -147,8 +151,25 @@ class LockActivity : ComponentActivity() {
     }
 
     private fun grantAndFinish(pkg: String) {
-        if (pkg.isNotBlank()) lockController.grantForeground(pkg)
+        if (pkg.isNotBlank()) {
+            lockController.grant(pkg, 0L)
+            launchLockedApp(pkg)
+        }
         finish()
+    }
+
+    /**
+     * Brings the just-unlocked app to the foreground explicitly. Relying on the back stack is
+     * unreliable when the lock was launched from a service, so we relaunch the app's own entry point
+     * (normal launcher, or the Fire TV leanback launcher). The grant prevents an immediate re-lock.
+     */
+    private fun launchLockedApp(pkg: String) {
+        val intent = packageManager.getLaunchIntentForPackage(pkg)
+            ?: packageManager.getLeanbackLaunchIntentForPackage(pkg)
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            runCatching { startActivity(intent) }
+        }
     }
 
     private fun goHome() {

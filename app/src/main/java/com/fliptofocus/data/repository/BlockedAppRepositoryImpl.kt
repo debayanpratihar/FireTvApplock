@@ -42,6 +42,10 @@ class BlockedAppRepositoryImpl @Inject constructor(
         dao.setEnabled(packageName, enabled)
     }
 
+    override suspend fun setAllEnabled(enabled: Boolean) {
+        dao.setAllEnabled(enabled)
+    }
+
     override suspend fun seedDefaultsIfEmpty() {
         if (dao.count() == 0) {
             val now = System.currentTimeMillis()

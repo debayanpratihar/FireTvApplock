@@ -2,7 +2,9 @@ package com.fliptofocus.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.fliptofocus.data.InstalledAppsProvider
 import com.fliptofocus.domain.repository.AppConfigRepository
+import com.fliptofocus.domain.repository.BlockedAppRepository
 import com.fliptofocus.lock.LockCredentialsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,8 @@ data class SettingsUiState(
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val credentials: LockCredentialsManager,
+    private val installedAppsProvider: InstalledAppsProvider,
+    private val blockedAppRepository: BlockedAppRepository,
     appConfigRepository: AppConfigRepository
 ) : ViewModel() {
 
@@ -78,5 +82,21 @@ class SettingsViewModel @Inject constructor(
 
     fun setRelockGrace(seconds: Int) {
         viewModelScope.launch { runCatching { credentials.setRelockGraceSeconds(seconds) } }
+    }
+
+    /** Bedtime lockdown: lock every installed app at once. */
+    fun lockAllApps() {
+        viewModelScope.launch {
+            runCatching {
+                installedAppsProvider.getLaunchableApps().forEach {
+                    blockedAppRepository.addBlockedApp(it.copy(isEnabled = true))
+                }
+            }
+        }
+    }
+
+    /** Unlock everything (disables the lock for all apps, keeping them in the list). */
+    fun unlockAllApps() {
+        viewModelScope.launch { runCatching { blockedAppRepository.setAllEnabled(false) } }
     }
 }
