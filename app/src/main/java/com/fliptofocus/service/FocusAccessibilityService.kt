@@ -156,6 +156,10 @@ class FocusAccessibilityService : AccessibilityService() {
         if (pkg in homePackages) return
         if (!cachedConfig.isLockingEnabled) return
         if (pkg !in lockedPackages) return
+
+        // Re-arm a grant if the user returned within the relock grace (absorbs transient windows and
+        // the Back-button flip); this is what stops the lock popping up during normal in-app use.
+        lockController.onEnterApp(pkg)
         if (lockController.isUnlocked(pkg)) return
 
         launchLock(pkg)
