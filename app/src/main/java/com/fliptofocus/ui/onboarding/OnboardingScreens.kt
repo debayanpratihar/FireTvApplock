@@ -51,6 +51,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.fliptofocus.R
 import com.fliptofocus.ui.components.NumberPad
 import com.fliptofocus.ui.components.PinDots
+import com.fliptofocus.ui.components.QrCode
 import com.fliptofocus.ui.components.TvButton
 import com.fliptofocus.ui.theme.IosGreen
 import com.fliptofocus.ui.theme.IosNested
@@ -211,6 +212,12 @@ private fun RecoveryStep(code: String?, onNext: () -> Unit) {
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp
         )
+    }
+    if (code != null) {
+        Spacer(Modifier.height(16.dp))
+        QrCode(content = "KidLock TV recovery code: $code")
+        Spacer(Modifier.height(8.dp))
+        Text("Scan with your phone to save it", color = IosSecondaryLabel, fontSize = 13.sp)
     }
     Spacer(Modifier.height(24.dp))
     TvButton(text = "I've written it down", onClick = onNext, focusRequester = focus)

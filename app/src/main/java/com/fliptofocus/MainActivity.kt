@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.fliptofocus.ui.navigation.AppNavigation
 import com.fliptofocus.ui.theme.FlipToFocusTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         val prefs = getSharedPreferences(FlipToFocusApp.CRASH_PREFS, Context.MODE_PRIVATE)

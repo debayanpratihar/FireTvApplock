@@ -144,8 +144,12 @@ Test the lock end-to-end: complete setup (create a PIN), add an app on **Locked 
 
 - **Supported devices:** the manifest declares `touchscreen`/`leanback` as *not required*, so the same
   APK targets Fire TV, Fire tablet, and phones. Confirm the device list in the Developer Console.
-- **TV banner:** `res/drawable/tv_banner.xml` renders on the Fire TV home. Upload a high-resolution PNG
-  banner for the store listing separately in the console.
+- **TV banner:** `res/drawable/tv_banner.xml` renders on the Fire TV home.
+- **Store artwork:** ready-made PNGs are in `store_assets/` — `icon_512x512`, `icon_114x114`,
+  `promo_1024x500`, `firetv_icon_1280x720`, and `background_1920x1080`. Regenerate any time with
+  `javac GenAssets.java && java GenAssets <outDir>` (source under the build scratchpad; also copyable
+  into the repo). The app's launcher icon and cold-start splash use the same padlock logo
+  (`res/drawable/ic_kidlock_logo.xml`).
 - **Privacy policy:** the app is fully offline and collects nothing; provide a short privacy policy
   stating that (Amazon requires a policy even for offline apps).
 - **Accessibility usage:** be ready to explain that the accessibility service is used only to read the

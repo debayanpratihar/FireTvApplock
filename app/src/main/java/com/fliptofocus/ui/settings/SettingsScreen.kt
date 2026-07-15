@@ -48,6 +48,7 @@ import com.fliptofocus.lock.Combo
 import com.fliptofocus.ui.components.FocusableRow
 import com.fliptofocus.ui.components.NumberPad
 import com.fliptofocus.ui.components.PinDots
+import com.fliptofocus.ui.components.QrCode
 import com.fliptofocus.ui.components.TvButton
 import com.fliptofocus.ui.theme.IosBackground
 import com.fliptofocus.ui.theme.IosBlue
@@ -403,6 +404,10 @@ private fun RecoveryCodePanel(code: String, onDone: () -> Unit) {
         ) {
             Text(code, fontSize = 30.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
         }
+        Spacer(Modifier.height(16.dp))
+        QrCode(content = "KidLock TV recovery code: $code")
+        Spacer(Modifier.height(8.dp))
+        Text("Scan with your phone to save it", color = IosSecondaryLabel, fontSize = 13.sp)
         Spacer(Modifier.height(24.dp))
         TvButton(text = "I've written it down", onClick = onDone, focusRequester = focus)
     }

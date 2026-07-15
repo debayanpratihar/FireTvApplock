@@ -1,6 +1,7 @@
 package com.fliptofocus.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,13 +32,16 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fliptofocus.ui.theme.IosNested
 import com.fliptofocus.ui.theme.IosSeparator
+import com.fliptofocus.util.QrGen
 
 /**
  * D-pad-first building blocks. Every interactive element shows a clear, high-contrast focus
@@ -114,6 +119,29 @@ fun FocusableRow(
         verticalAlignment = Alignment.CenterVertically,
         content = content
     )
+}
+
+/** A QR code rendered from [content] (offline). Shows on a white card so a phone camera can read it. */
+@Composable
+fun QrCode(content: String, modifier: Modifier = Modifier, sizeDp: Dp = 168.dp) {
+    val image = remember(content) { QrGen.encode(content, 512) }
+    Box(
+        modifier = modifier
+            .size(sizeDp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White)
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (image != null) {
+            Image(
+                bitmap = image,
+                contentDescription = "Recovery code QR",
+                modifier = Modifier.fillMaxSize(),
+                filterQuality = FilterQuality.None
+            )
+        }
+    }
 }
 
 /** Dots showing how many PIN digits have been entered (out of [max]). */

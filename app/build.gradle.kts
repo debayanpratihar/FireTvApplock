@@ -64,6 +64,12 @@ dependencies {
     // Core / KTX
     implementation(libs.androidx.core.ktx)
 
+    // Splash screen (androidx compat: shows the logo at cold start on API 26+ and Fire TV)
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Offline QR generation for the "scan with your phone" recovery export (pure-Java, no network)
+    implementation("com.google.zxing:core:3.5.3")
+
     // Lifecycle
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
