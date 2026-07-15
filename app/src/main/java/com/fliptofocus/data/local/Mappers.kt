@@ -2,8 +2,6 @@ package com.fliptofocus.data.local
 
 import com.fliptofocus.domain.model.AppConfig
 import com.fliptofocus.domain.model.BlockedApp
-import com.fliptofocus.domain.model.FocusSession
-import com.fliptofocus.domain.model.SessionStatus
 
 // ---------------------------------------------------------------------------
 // BlockedApp <-> BlockedAppEntity
@@ -22,22 +20,6 @@ fun BlockedApp.toEntity(addedAt: Long = System.currentTimeMillis()): BlockedAppE
         appLabel = appLabel,
         isEnabled = isEnabled,
         addedAt = addedAt
-    )
-
-// ---------------------------------------------------------------------------
-// FocusSession (access-log entry) <-> FocusSessionEntity
-//
-// The legacy focus_sessions table is reused as the access log: startTimestamp holds when the
-// locked app was opened; endTimestamp / challengeDurationMillis are unused (kept as columns only).
-// ---------------------------------------------------------------------------
-
-fun FocusSessionEntity.toDomain(): FocusSession =
-    FocusSession(
-        id = id,
-        timestamp = startTimestamp,
-        triggeringPackage = triggeringPackage,
-        status = runCatching { SessionStatus.valueOf(status) }
-            .getOrDefault(SessionStatus.LOCKED)
     )
 
 // ---------------------------------------------------------------------------

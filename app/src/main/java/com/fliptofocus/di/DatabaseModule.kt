@@ -5,7 +5,6 @@ import androidx.room.Room
 import com.fliptofocus.data.local.AppConfigDao
 import com.fliptofocus.data.local.BlockedAppDao
 import com.fliptofocus.data.local.FlipToFocusDatabase
-import com.fliptofocus.data.local.FocusSessionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,9 +17,9 @@ import javax.inject.Singleton
 object DatabaseModule {
 
     /**
-     * Fresh installs (what the app store review does) create the current v4 schema directly from the
-     * entities. There are no published users, so instead of maintaining fragile column-default
-     * migrations for old developer databases we recreate on any version change. Add explicit
+     * Fresh installs (what the app store review does) create the current v5 schema directly from the
+     * entities. There are no published users, so instead of maintaining fragile migrations for old
+     * developer databases we recreate on any version change. Add explicit
      * [androidx.room.migration.Migration]s here once the app has real users whose data must survive.
      */
     @Provides
@@ -37,10 +36,6 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideBlockedAppDao(db: FlipToFocusDatabase): BlockedAppDao = db.blockedAppDao()
-
-    @Provides
-    @Singleton
-    fun provideFocusSessionDao(db: FlipToFocusDatabase): FocusSessionDao = db.focusSessionDao()
 
     @Provides
     @Singleton

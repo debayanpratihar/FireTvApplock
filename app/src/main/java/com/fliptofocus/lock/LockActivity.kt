@@ -12,34 +12,29 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.fliptofocus.domain.model.SessionStatus
 import com.fliptofocus.domain.repository.AppConfigRepository
-import com.fliptofocus.domain.repository.FocusSessionRepository
 import com.fliptofocus.ui.theme.FlipToFocusTheme
 import com.fliptofocus.ui.theme.IosBackground
 import com.fliptofocus.util.PinSecurity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
  * Full-screen lock shown on top of a locked app (launched by the accessibility service) and also
  * used for the in-app "Preview lock" demo (launched with [EXTRA_PREVIEW]).
  *
- * On a real lock, a correct credential grants the app in [LockController] and logs UNLOCKED, then
- * finishes so the app appears; backing out logs DENIED and returns to the device home. In preview
- * mode nothing is granted or logged - it just shows the success confirmation so a parent (or an
- * app reviewer) can verify the lock in-app without needing any special permission.
+ * On a real lock, a correct credential grants the app in [LockController] and relaunches it so it
+ * comes to the front; backing out returns to the device home. In preview mode nothing is granted -
+ * it just shows the success confirmation so a parent (or an app reviewer) can verify the lock
+ * in-app without needing any special permission. Nothing is ever logged, recorded, or transmitted.
  */
 @AndroidEntryPoint
 class LockActivity : ComponentActivity() {
 
     @Inject lateinit var appConfigRepository: AppConfigRepository
-    @Inject lateinit var focusSessionRepository: FocusSessionRepository
     @Inject lateinit var lockController: LockController
 
     private var targetPackage by mutableStateOf("")
@@ -55,7 +50,6 @@ class LockActivity : ComponentActivity() {
                 val configFlow = remember { appConfigRepository.observeConfig() }
                 val config by configFlow.collectAsState(initial = null)
                 var showSuccess by remember { mutableStateOf(false) }
-                val scope = rememberCoroutineScope()
 
                 when {
                     showSuccess -> {
@@ -107,28 +101,13 @@ class LockActivity : ComponentActivity() {
                                     val pkg = targetPackage
                                     if (pkg.isNotBlank()) {
                                         lockController.grant(pkg, cfg.relockGraceSeconds * 1000L)
-                                        scope.launch {
-                                            runCatching {
-                                                focusSessionRepository.logEvent(pkg, SessionStatus.UNLOCKED)
-                                            }
-                                        }
                                         launchLockedApp(pkg)
                                     }
                                     finish()
                                 }
                             },
                             onGoBack = {
-                                if (!preview) {
-                                    val pkg = targetPackage
-                                    if (pkg.isNotBlank()) {
-                                        scope.launch {
-                                            runCatching {
-                                                focusSessionRepository.logEvent(pkg, SessionStatus.DENIED)
-                                            }
-                                        }
-                                    }
-                                    goHome()
-                                }
+                                if (!preview) goHome()
                                 finish()
                             }
                         )

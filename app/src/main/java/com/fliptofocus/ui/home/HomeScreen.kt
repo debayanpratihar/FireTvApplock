@@ -48,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
-import com.fliptofocus.domain.model.SessionStatus
 import com.fliptofocus.lock.LockActivity
 import com.fliptofocus.ui.components.FocusableRow
 import com.fliptofocus.ui.components.TvButton
@@ -59,9 +58,6 @@ import com.fliptofocus.ui.theme.IosGroup
 import com.fliptofocus.ui.theme.IosOrange
 import com.fliptofocus.ui.theme.IosSecondaryLabel
 import com.fliptofocus.util.PermissionUtils
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -105,7 +101,7 @@ fun HomeScreen(
                 text = when {
                     !uiState.isLockingEnabled -> "Locking is paused"
                     uiState.lockedAppCount == 0 -> "No apps locked yet — add some below"
-                    else -> "${uiState.lockedAppCount} app(s) locked · ${uiState.unlockedToday} unlocked today"
+                    else -> "${uiState.lockedAppCount} app(s) locked"
                 },
                 color = IosSecondaryLabel,
                 fontSize = 15.sp
@@ -173,37 +169,6 @@ fun HomeScreen(
                 onClick = { navController.navigate(Routes.SETTINGS) }
             )
 
-            Spacer(Modifier.height(22.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "RECENT ACTIVITY",
-                    color = IosSecondaryLabel,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                if (uiState.recentEvents.isNotEmpty()) {
-                    TvButton(
-                        text = "Clear",
-                        onClick = { viewModel.clearHistory() },
-                        containerColor = IosGroup,
-                        contentColor = IosBlue
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            if (uiState.recentEvents.isEmpty()) {
-                Text(
-                    "When a locked app is opened, it shows here — unlocked or denied.",
-                    color = IosSecondaryLabel,
-                    fontSize = 14.sp
-                )
-            } else {
-                uiState.recentEvents.forEach { row ->
-                    AccessLogItem(row)
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -279,28 +244,3 @@ private fun AccessibilityHintCard(onEnable: () -> Unit) {
     }
 }
 
-@Composable
-private fun AccessLogItem(row: AccessLogRow) {
-    val (label, color) = when (row.status) {
-        SessionStatus.UNLOCKED -> "Unlocked" to IosGreen
-        SessionStatus.DENIED -> "Denied" to IosOrange
-        SessionStatus.LOCKED -> "Locked" to IosSecondaryLabel
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(IosGroup)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(row.label, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Text(formatTime(row.timestamp), color = IosSecondaryLabel, fontSize = 12.sp)
-        }
-        StatusPill(text = label, color = color)
-    }
-}
-
-private fun formatTime(timestamp: Long): String =
-    SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(timestamp))

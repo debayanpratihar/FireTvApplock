@@ -20,13 +20,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,9 +57,12 @@ import com.fliptofocus.ui.theme.IosNested
 import com.fliptofocus.ui.theme.IosRed
 import com.fliptofocus.ui.theme.IosSecondaryLabel
 import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
+import kotlin.math.abs
 
 private enum class SettingsMode { MAIN, CHANGE_PIN, SET_SEQUENCE }
+
+// Preset "keep unlocked for" durations (minutes) stepped through with the − / + remote buttons.
+private val DURATION_STEPS_MIN = listOf(0, 1, 2, 5, 10, 15, 30, 45, 60)
 
 @Composable
 fun SettingsScreen(
@@ -183,7 +184,7 @@ private fun SettingsMain(
             onClick = onUnlockAll
         )
         Spacer(Modifier.height(12.dp))
-        UnlockDurationSlider(currentSeconds = uiState.relockGraceSeconds, onChange = onSelectGrace)
+        UnlockDurationStepper(currentSeconds = uiState.relockGraceSeconds, onChange = onSelectGrace)
 
         Spacer(Modifier.height(20.dp))
         SectionHeader("PRIVACY")
@@ -241,40 +242,65 @@ private fun SettingRow(
 }
 
 @Composable
-private fun UnlockDurationSlider(currentSeconds: Int, onChange: (Int) -> Unit) {
-    var minutes by remember(currentSeconds) { mutableFloatStateOf(currentSeconds / 60f) }
-    // Commit on every discrete step (reliable with a D-pad, where onValueChangeFinished may not
-    // fire) as well as on release; de-duplicated so we don't spam the DB with identical writes.
-    var lastCommitted by remember(currentSeconds) { mutableIntStateOf(currentSeconds / 60) }
-    fun commit(m: Int) {
-        if (m != lastCommitted) {
-            lastCommitted = m
-            onChange(m * 60)
-        }
-    }
+private fun UnlockDurationStepper(currentSeconds: Int, onChange: (Int) -> Unit) {
+    var index by remember(currentSeconds) { mutableIntStateOf(nearestStepIndex(currentSeconds / 60)) }
     Column(modifier = Modifier.padding(vertical = 6.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Keep unlocked for", fontSize = 16.sp, modifier = Modifier.weight(1f))
-            Text(
-                text = durationLabel(minutes.roundToInt()),
-                color = IosBlue,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Slider(
-            value = minutes,
-            onValueChange = { minutes = it; commit(it.roundToInt()) },
-            onValueChangeFinished = { commit(minutes.roundToInt()) },
-            valueRange = 0f..60f,
-            steps = 59
-        )
+        Text("Keep unlocked for", fontSize = 16.sp)
+        Spacer(Modifier.height(4.dp))
         Text(
             text = "After unlocking, an app stays open this long (even if you leave), then re-locks. " +
                 "\"Until you leave\" re-locks the moment you switch away.",
             color = IosSecondaryLabel,
             fontSize = 12.sp
         )
+        Spacer(Modifier.height(10.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            TvButton(
+                text = "–",
+                onClick = {
+                    if (index > 0) {
+                        index -= 1
+                        onChange(DURATION_STEPS_MIN[index] * 60)
+                    }
+                },
+                containerColor = IosNested
+            )
+            Box(modifier = Modifier.widthIn(min = 150.dp), contentAlignment = Alignment.Center) {
+                Text(
+                    text = durationLabel(DURATION_STEPS_MIN[index]),
+                    color = IosBlue,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp
+                )
+            }
+            TvButton(
+                text = "+",
+                onClick = {
+                    if (index < DURATION_STEPS_MIN.lastIndex) {
+                        index += 1
+                        onChange(DURATION_STEPS_MIN[index] * 60)
+                    }
+                },
+                containerColor = IosNested
+            )
+        }
     }
+}
+
+private fun nearestStepIndex(minutes: Int): Int {
+    var best = 0
+    var bestDiff = Int.MAX_VALUE
+    DURATION_STEPS_MIN.forEachIndexed { i, m ->
+        val diff = abs(m - minutes)
+        if (diff < bestDiff) {
+            bestDiff = diff
+            best = i
+        }
+    }
+    return best
 }
 
 private fun durationLabel(minutes: Int): String = when {
