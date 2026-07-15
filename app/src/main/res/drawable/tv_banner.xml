@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fire TV / Android TV home-screen banner (viewport 320x180, the standard TV banner aspect).
+    A dark card with a blue padlock. Upload a higher-resolution branded PNG banner in the Amazon
+    Developer Console for the store listing; this drawable is what Fire OS renders on the home row.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <!-- Background -->
+    <path
+        android:fillColor="#FF0B0B0D"
+        android:pathData="M0,0 L320,0 L320,180 L0,180 Z" />
+
+    <!-- Soft accent glow strip on the left -->
+    <path
+        android:fillColor="#1A0A84FF"
+        android:pathData="M0,0 L120,0 L120,180 L0,180 Z" />
+
+    <!-- Padlock shackle (the arc) -->
+    <path
+        android:strokeColor="#FF0A84FF"
+        android:strokeWidth="9"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M64,86 L64,74 A21,21 0 0 1 106,74 L106,86" />
+
+    <!-- Padlock body -->
+    <path
+        android:fillColor="#FF0A84FF"
+        android:pathData="M52,84 m0,10 a10,10 0 0 1 10,-10 l46,0 a10,10 0 0 1 10,10 l0,40 a10,10 0 0 1 -10,10 l-46,0 a10,10 0 0 1 -10,-10 z" />
+
+    <!-- Keyhole -->
+    <path
+        android:fillColor="#FF0B0B0D"
+        android:pathData="M85,108 m-6,0 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 z" />
+    <path
+        android:fillColor="#FF0B0B0D"
+        android:pathData="M82,114 L88,114 L90,130 L80,130 Z" />
+
+    <!-- Wordmark blocks (stylized 'KIDLOCK' bar + subtitle bar) since vector text is not supported -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M150,74 l128,0 l0,16 l-128,0 z" />
+    <path
+        android:fillColor="#FF98989F"
+        android:pathData="M150,100 l86,0 l0,10 l-86,0 z" />
+</vector>

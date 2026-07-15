@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">KidLock TV</string>
+
+    <!-- ================= Prominent-disclosure strings (shown BEFORE opening OS settings) ================= -->
+    <string name="accessibility_disclosure">KidLock TV uses the Accessibility service only to read the NAME of the app currently on screen, so it can show your lock screen when someone opens an app you chose to lock. It never reads, collects, or transmits the text or content on your screen. All processing stays on this device, and the app keeps working (set your PIN, choose apps, preview the lock) even if you skip this step.</string>
+
+    <!-- ================= Accessibility service (system-facing) ================= -->
+    <string name="accessibility_service_label">KidLock TV</string>
+    <string name="accessibility_service_description">Lets KidLock TV notice when an app you chose to lock is opened, so it can show your lock screen. It only uses the foreground app\'s name and never reads or stores your screen content — everything stays on this device.</string>
+    <string name="accessibility_service_summary">Detects locked apps on-device so KidLock TV can protect them with your PIN.</string>
+
+    <!-- ================= Onboarding ================= -->
+    <string name="onboarding_welcome_title">Lock apps on your TV</string>
+    <string name="action_next">Next</string>
+    <string name="action_back">Back</string>
+    <string name="action_skip">Skip for now</string>
+    <string name="action_done">Done</string>
+
+    <!-- ================= Home ================= -->
+    <string name="home_title">KidLock TV</string>
+    <string name="locking_enabled">Locking on</string>
+    <string name="locking_disabled">Locking paused</string>
+    <string name="manage_locklist">Locked apps</string>
+    <string name="open_settings">Settings</string>
+    <string name="preview_lock">Preview lock screen</string>
+
+    <!-- ================= Lock list ================= -->
+    <string name="locklist_title">Choose apps to lock</string>
+    <string name="search_apps">Search apps</string>
+    <string name="loading">Loading…</string>
+    <string name="no_apps_found">No apps found</string>
+
+    <!-- ================= Settings ================= -->
+    <string name="settings_title">Settings</string>
+    <string name="change_pin">Change PIN</string>
+    <string name="set_secret_sequence">Secret remote sequence</string>
+    <string name="recovery_code">Recovery code</string>
+    <string name="privacy_statement">KidLock TV works completely offline. Your PIN, locked-app list, and history stay on this device. The app has no internet permission and never sends, collects, or shares your data.</string>
+
+    <!-- ================= Lock screen ================= -->
+    <string name="lock_headline">App locked</string>
+    <string name="lock_subtext_format">Enter your PIN to open %1$s.</string>
+    <string name="enter_pin">Enter PIN</string>
+    <string name="wrong_pin">Incorrect PIN. Try again.</string>
+    <string name="unlock">Unlock</string>
+    <string name="use_secret_sequence">Use secret sequence</string>
+    <string name="use_pin">Use PIN</string>
+    <string name="forgot_pin">Forgot PIN? Use recovery code</string>
+    <string name="go_back">Go back</string>
+</resources>

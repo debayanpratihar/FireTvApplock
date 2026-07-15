@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+         KidLock TV is 100% offline: NO internet, NO analytics/networking, NO QUERY_ALL_PACKAGES,
+         and NO "Draw over other apps" (SYSTEM_ALERT_WINDOW) permission. The last point matters on
+         Fire TV, where Fire OS removes the overlay-permission settings screen so that permission
+         can never be granted with a remote.
+
+         Locking is enforced by an AccessibilityService that detects the foreground app and, for an
+         app the parent chose to lock, brings up KidLock's full-screen lock Activity. The
+         accessibility permission IS reachable on Fire TV (Settings > Accessibility) and the app
+         stays fully usable (set PIN, choose apps, preview the lock) even before it is granted.
+    -->
+
+    <!--
+         This app supports Fire TV (D-pad only, no touchscreen) as well as Fire tablets and phones.
+         Declaring the touchscreen as NOT required is what tells the Amazon Appstore / Android the
+         app runs on Fire TV. Leanback is likewise optional so the same APK also runs on touch
+         devices.
+    -->
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.faketouch"
+        android:required="false" />
+
+    <!--
+         Resolve the launchable installed apps for the "locked apps" picker using
+         queryIntentActivities for BOTH the phone/tablet launcher category and the Fire TV /
+         Android TV LEANBACK launcher category - NOT QUERY_ALL_PACKAGES.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".FlipToFocusApp"
+        android:allowBackup="false"
+        android:banner="@drawable/tv_banner"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.FlipToFocus"
+        tools:targetApi="34">
+
+        <!--
+             Launcher entry. LAUNCHER shows it on phones/tablets; LEANBACK_LAUNCHER shows it on the
+             Fire TV / Android TV home. android:banner supplies the TV home artwork.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:banner="@drawable/tv_banner"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.FlipToFocus">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+             Full-screen lock screen shown on top of a locked app (launched by the accessibility
+             service) and also used for the in-app "Preview lock" demo. Not exported: only KidLock
+             can start it. singleTask + excludeFromRecents keep a single instance that never lingers
+             in Recents. configChanges avoids recreating the screen (and losing typed input) on TV
+             UI-mode / size changes.
+        -->
+        <activity
+            android:name=".lock.LockActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|navigation|uiMode"
+            android:theme="@style/Theme.KidLock.Lock" />
+
+        <!--
+             Foreground-app detector. Protected by BIND_ACCESSIBILITY_SERVICE (held only by the
+             system) so no other app can bind to it. exported=true is required for the system to
+             bind an accessibility service.
+        -->
+        <service
+            android:name=".service.FocusAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+    </application>
+
+</manifest>

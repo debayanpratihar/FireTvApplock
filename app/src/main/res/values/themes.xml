@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+         Minimal platform manifest theme. The real theming is done in Compose
+         (FlipToFocusTheme, which is dark-only). This makes the app window black from
+         launch (no white flash) with a dark status bar.
+    -->
+    <style name="Theme.FlipToFocus" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <!--
+         Full-screen, opaque theme for the lock screen (LockActivity). It fully covers the app
+         underneath while the parent's PIN / secret sequence is required to continue.
+    -->
+    <style name="Theme.KidLock.Lock" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+</resources>
